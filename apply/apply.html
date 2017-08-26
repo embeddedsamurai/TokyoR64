@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="author" content="@y__mattu" />
+  <title>R による日本語テキスト前処理   (形態素解析を中心に)</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="apply_files/reveal.js-3.3.0.1/css/reveal.css"/>
+
+
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; background-color: #dddddd; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { font-weight: bold; } /* Keyword */
+code > span.dt { color: #800000; } /* DataType */
+code > span.dv { color: #0000ff; } /* DecVal */
+code > span.bn { color: #0000ff; } /* BaseN */
+code > span.fl { color: #800080; } /* Float */
+code > span.ch { color: #ff00ff; } /* Char */
+code > span.st { color: #dd0000; } /* String */
+code > span.co { color: #808080; font-style: italic; } /* Comment */
+code > span.al { color: #00ff00; font-weight: bold; } /* Alert */
+code > span.fu { color: #000080; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #ff0000; font-weight: bold; } /* Warning */
+code > span.cn { color: #000000; } /* Constant */
+code > span.sc { color: #ff00ff; } /* SpecialChar */
+code > span.vs { color: #dd0000; } /* VerbatimString */
+code > span.ss { color: #dd0000; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { } /* Variable */
+code > span.cf { } /* ControlFlow */
+code > span.op { } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { font-weight: bold; } /* Preprocessor */
+code > span.at { } /* Attribute */
+code > span.do { color: #808080; font-style: italic; } /* Documentation */
+code > span.an { color: #808080; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #808080; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #808080; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+<link rel="stylesheet" href="apply_files/reveal.js-3.3.0.1/css/theme/sky.css" id="theme">
+
+
+  <!-- some tweaks to reveal css -->
+  <style type="text/css">
+    .reveal h1 { font-size: 2.0em; }
+    .reveal h2 { font-size: 1.5em;  }
+    .reveal h3 { font-size: 1.25em;	}
+    .reveal h4 { font-size: 1em;	}
+
+    .reveal .slides>section,
+    .reveal .slides>section>section {
+      padding: 0px 0px;
+    }
+
+
+
+    .reveal table {
+      border-width: 1px;
+      border-spacing: 2px;
+      border-style: dotted;
+      border-color: gray;
+      border-collapse: collapse;
+      font-size: 0.7em;
+    }
+
+    .reveal table th {
+      border-width: 1px;
+      padding-left: 10px;
+      padding-right: 25px;
+      font-weight: bold;
+      border-style: dotted;
+      border-color: gray;
+    }
+
+    .reveal table td {
+      border-width: 1px;
+      padding-left: 10px;
+      padding-right: 25px;
+      border-style: dotted;
+      border-color: gray;
+    }
+
+
+  </style>
+
+    <style type="text/css">code{white-space: pre;}</style>
+
+    <link rel="stylesheet" href="for_revealjs.css"/>
+
+<!-- Printing and PDF exports -->
+<script id="paper-css" type="application/dynamic-css">
+
+/* Default Print Stylesheet Template
+   by Rob Glazebrook of CSSnewbie.com
+   Last Updated: June 4, 2008
+
+   Feel free (nay, compelled) to edit, append, and
+   manipulate this file as you see fit. */
+
+
+@media print {
+
+	/* SECTION 1: Set default width, margin, float, and
+	   background. This prevents elements from extending
+	   beyond the edge of the printed page, and prevents
+	   unnecessary background images from printing */
+	html {
+		background: #fff;
+		width: auto;
+		height: auto;
+		overflow: visible;
+	}
+	body {
+		background: #fff;
+		font-size: 20pt;
+		width: auto;
+		height: auto;
+		border: 0;
+		margin: 0 5%;
+		padding: 0;
+		overflow: visible;
+		float: none !important;
+	}
+
+	/* SECTION 2: Remove any elements not needed in print.
+	   This would include navigation, ads, sidebars, etc. */
+	.nestedarrow,
+	.controls,
+	.fork-reveal,
+	.share-reveal,
+	.state-background,
+	.reveal .progress,
+	.reveal .backgrounds {
+		display: none !important;
+	}
+
+	/* SECTION 3: Set body font face, size, and color.
+	   Consider using a serif font for readability. */
+	body, p, td, li, div {
+		font-size: 20pt!important;
+		font-family: Georgia, "Times New Roman", Times, serif !important;
+		color: #000;
+	}
+
+	/* SECTION 4: Set heading font face, sizes, and color.
+	   Differentiate your headings from your body text.
+	   Perhaps use a large sans-serif for distinction. */
+	h1,h2,h3,h4,h5,h6 {
+		color: #000!important;
+		height: auto;
+		line-height: normal;
+		font-family: Georgia, "Times New Roman", Times, serif !important;
+		text-shadow: 0 0 0 #000 !important;
+		text-align: left;
+		letter-spacing: normal;
+	}
+	/* Need to reduce the size of the fonts for printing */
+	h1 { font-size: 28pt !important;  }
+	h2 { font-size: 24pt !important; }
+	h3 { font-size: 22pt !important; }
+	h4 { font-size: 22pt !important; font-variant: small-caps; }
+	h5 { font-size: 21pt !important; }
+	h6 { font-size: 20pt !important; font-style: italic; }
+
+	/* SECTION 5: Make hyperlinks more usable.
+	   Ensure links are underlined, and consider appending
+	   the URL to the end of the link for usability. */
+	a:link,
+	a:visited {
+		color: #000 !important;
+		font-weight: bold;
+		text-decoration: underline;
+	}
+	/*
+	.reveal a:link:after,
+	.reveal a:visited:after {
+		content: " (" attr(href) ") ";
+		color: #222 !important;
+		font-size: 90%;
+	}
+	*/
+
+
+	/* SECTION 6: more reveal.js specific additions by @skypanther */
+	ul, ol, div, p {
+		visibility: visible;
+		position: static;
+		width: auto;
+		height: auto;
+		display: block;
+		overflow: visible;
+		margin: 0;
+		text-align: left !important;
+	}
+	.reveal pre,
+	.reveal table {
+		margin-left: 0;
+		margin-right: 0;
+	}
+	.reveal pre code {
+		padding: 20px;
+		border: 1px solid #ddd;
+	}
+	.reveal blockquote {
+		margin: 20px 0;
+	}
+	.reveal .slides {
+		position: static !important;
+		width: auto !important;
+		height: auto !important;
+
+		left: 0 !important;
+		top: 0 !important;
+		margin-left: 0 !important;
+		margin-top: 0 !important;
+		padding: 0 !important;
+		zoom: 1 !important;
+
+		overflow: visible !important;
+		display: block !important;
+
+		text-align: left !important;
+		-webkit-perspective: none;
+		   -moz-perspective: none;
+		    -ms-perspective: none;
+		        perspective: none;
+
+		-webkit-perspective-origin: 50% 50%;
+		   -moz-perspective-origin: 50% 50%;
+		    -ms-perspective-origin: 50% 50%;
+		        perspective-origin: 50% 50%;
+	}
+	.reveal .slides section {
+		visibility: visible !important;
+		position: static !important;
+		width: auto !important;
+		height: auto !important;
+		display: block !important;
+		overflow: visible !important;
+
+		left: 0 !important;
+		top: 0 !important;
+		margin-left: 0 !important;
+		margin-top: 0 !important;
+		padding: 60px 20px !important;
+		z-index: auto !important;
+
+		opacity: 1 !important;
+
+		page-break-after: always !important;
+
+		-webkit-transform-style: flat !important;
+		   -moz-transform-style: flat !important;
+		    -ms-transform-style: flat !important;
+		        transform-style: flat !important;
+
+		-webkit-transform: none !important;
+		   -moz-transform: none !important;
+		    -ms-transform: none !important;
+		        transform: none !important;
+
+		-webkit-transition: none !important;
+		   -moz-transition: none !important;
+		    -ms-transition: none !important;
+		        transition: none !important;
+	}
+	.reveal .slides section.stack {
+		padding: 0 !important;
+	}
+	.reveal section:last-of-type {
+		page-break-after: avoid !important;
+	}
+	.reveal section .fragment {
+		opacity: 1 !important;
+		visibility: visible !important;
+
+		-webkit-transform: none !important;
+		   -moz-transform: none !important;
+		    -ms-transform: none !important;
+		        transform: none !important;
+	}
+	.reveal section img {
+		display: block;
+		margin: 15px 0px;
+		background: rgba(255,255,255,1);
+		border: 1px solid #666;
+		box-shadow: none;
+	}
+
+	.reveal section small {
+		font-size: 0.8em;
+	}
+
+}  
+</script>
+
+
+<script id="pdf-css" type="application/dynamic-css">
+    
+/**
+ * This stylesheet is used to print reveal.js
+ * presentations to PDF.
+ *
+ * https://github.com/hakimel/reveal.js#pdf-export
+ */
+
+* {
+	-webkit-print-color-adjust: exact;
+}
+
+body {
+	margin: 0 auto !important;
+	border: 0;
+	padding: 0;
+	float: none !important;
+	overflow: visible;
+}
+
+html {
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+/* Remove any elements not needed in print. */
+.nestedarrow,
+.reveal .controls,
+.reveal .progress,
+.reveal .playback,
+.reveal.overview,
+.fork-reveal,
+.share-reveal,
+.state-background {
+	display: none !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	text-shadow: 0 0 0 #000 !important;
+}
+
+.reveal pre code {
+	overflow: hidden !important;
+	font-family: Courier, 'Courier New', monospace !important;
+}
+
+ul, ol, div, p {
+	visibility: visible;
+	position: static;
+	width: auto;
+	height: auto;
+	display: block;
+	overflow: visible;
+	margin: auto;
+}
+.reveal {
+	width: auto !important;
+	height: auto !important;
+	overflow: hidden !important;
+}
+.reveal .slides {
+	position: static;
+	width: 100%;
+	height: auto;
+
+	left: auto;
+	top: auto;
+	margin: 0 !important;
+	padding: 0 !important;
+
+	overflow: visible;
+	display: block;
+
+	-webkit-perspective: none;
+	   -moz-perspective: none;
+	    -ms-perspective: none;
+	        perspective: none;
+
+	-webkit-perspective-origin: 50% 50%; /* there isn't a none/auto value but 50-50 is the default */
+	   -moz-perspective-origin: 50% 50%;
+	    -ms-perspective-origin: 50% 50%;
+	        perspective-origin: 50% 50%;
+}
+
+.reveal .slides section {
+	page-break-after: always !important;
+
+	visibility: visible !important;
+	position: relative !important;
+	display: block !important;
+	position: relative !important;
+
+	margin: 0 !important;
+	padding: 0 !important;
+	box-sizing: border-box !important;
+	min-height: 1px;
+
+	opacity: 1 !important;
+
+	-webkit-transform-style: flat !important;
+	   -moz-transform-style: flat !important;
+	    -ms-transform-style: flat !important;
+	        transform-style: flat !important;
+
+	-webkit-transform: none !important;
+	   -moz-transform: none !important;
+	    -ms-transform: none !important;
+	        transform: none !important;
+}
+
+.reveal section.stack {
+	margin: 0 !important;
+	padding: 0 !important;
+	page-break-after: avoid !important;
+	height: auto !important;
+	min-height: auto !important;
+}
+
+.reveal img {
+	box-shadow: none;
+}
+
+.reveal .roll {
+	overflow: visible;
+	line-height: 1em;
+}
+
+/* Slide backgrounds are placed inside of their slide when exporting to PDF */
+.reveal section .slide-background {
+	display: block !important;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	z-index: -1;
+}
+
+/* All elements should be above the slide-background */
+.reveal section>* {
+	position: relative;
+	z-index: 1;
+}
+
+/* Display slide speaker notes when 'showNotes' is enabled */
+.reveal .speaker-notes-pdf {
+	display: block;
+	width: 100%;
+	max-height: none;
+	left: auto;
+	top: auto;
+	z-index: 100;
+}
+
+/* Display slide numbers when 'slideNumber' is enabled */
+.reveal .slide-number-pdf {
+	display: block;
+	position: absolute;
+	font-size: 14px;
+}
+
+</script>
+
+
+<script>
+var style = document.createElement( 'style' );
+style.type = 'text/css';
+var style_script_id = window.location.search.match( /print-pdf/gi ) ? 'pdf-css' : 'paper-css';
+var style_script = document.getElementById(style_script_id).text;
+style.innerHTML = style_script;
+document.getElementsByTagName('head')[0].appendChild(style);
+</script>
+
+    <link href="apply_files/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+    <script src="apply_files/htmlwidgets-0.9/htmlwidgets.js"></script>
+    <script src="apply_files/viz-0.3/viz.js"></script>
+    <link href="apply_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+    <script src="apply_files/grViz-binding-0.9.0/grViz.js"></script>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+<section>
+    <h1 class="title">R による日本語テキスト前処理 <br> (形態素解析を中心に)</h1>
+    <h2 class="author"><span class="citation" data-cites="y__mattu">@y__mattu</span></h2>
+    <h3 class="date">Tokyo.R #64 応用セッション</h3>
+</section>
+
+<section><section class="titleslide slide level1"><h1>はじめに</h1></section><section class="slide level2">
+<h1>誰？</h1>
+<div class="column1">
+<ul>
+<li>松村優哉</li>
+<li><u>Twitter</u>: <strong>y__mattu</strong></li>
+<li><u>GitHub</u>: <strong>ymattu</strong></li>
+<li>M1</li>
+<li>計量経済学、ベイズ統計、因果推論、マーケティング</li>
+<li>言語: R, SAS, Python</li>
+<li><a href="https://ymattu.github.io/" class="uri">https://ymattu.github.io/</a></li>
+<li><a href="http://y-mattu.hatenablog.com/" class="uri">http://y-mattu.hatenablog.com/</a></li>
+<li>Tokyo.R 運営チーム</li>
+</ul>
+</div>
+<div class="column2">
+<p><img src="slide_img/twitter_icon.jpg" alt="icon" /></p>
+</div>
+</section><section class="slide level2">
+<h1>著書(共著)</h1>
+<p><img src="slide_img/datasci.jpg" alt="book" /></p>
+</section><section class="slide level2">
+<h1>今日の話</h1>
+<ul>
+<li>テキストマイニングの全体像
+<ul>
+<li>テキストデータ特有の前処理</li>
+</ul></li>
+<li>僕らがまず目指すべきところ</li>
+<li>形態素解析について</li>
+<li>R で形態素解析</li>
+<li>まとめ</li>
+</ul>
+</section><section id="-" class="slide level2">
+<h1>パッケージ名だけでも覚えて<br>帰ってくださいね</h1>
+</section></section>
+<section><section class="titleslide slide level1"><h1>テキストマイニングの全体像</h1></section><section class="slide level2">
+<h1>テキストデータの解析(<a href="https://ymattu.github.io/TokyoR61/for_beginners.html#3">引用</a>)</h1>
+<div id="htmlwidget-d91a35c097d8bd8714e7" style="width:400px;height:600px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-d91a35c097d8bd8714e7">{"x":{"diagram":"\ndigraph data_analytics {\n\n      # graph\n      graph [overlap = true, fontsize = 20]\n\n      # node\n      node [shape = box,\n      fontname = Helvetica,\n      fillcolor = white,\n      fontcolor = black]\n      データ取得; 前処理; 可視化・モデリング;\n\n      # edge\n      データ取得->前処理\n      前処理->可視化・モデリング\n      }\n      ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</section><section class="slide level2">
+<h1>テキストデータ特有の処理</h1>
+<div class="column1">
+<div id="htmlwidget-db8cd0d3e300b2bfd883" style="width:400px;height:600px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-db8cd0d3e300b2bfd883">{"x":{"diagram":"\ndigraph data_analytics {\n\n      # graph\n      graph [overlap = true, fontsize = 10]\n\n      # node\n      node [shape=box,\n      fontname = Helvetica,\n      style = filled,\n      fillcolor = SteelBlue,\n      fontcolor = white]\n      前処理;\n\n      node [shape = box,\n      fontname = Helvetica,\n      fillcolor = Gray,\n      fontcolor = black]\n      データ取得; 可視化・モデリング;\n\n      # edge\n      データ取得->前処理\n      前処理->可視化・モデリング\n      }\n      ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="column2">
+<ul>
+<li>本文抽出(Web データ、非構造化データ)</li>
+<li>形態素解析、統語解析、意味解析 <br> →文書の特徴を抽出</li>
+<li>数値表現化(Bag of Words, N-gram, TF-IDF など))</li>
+</ul>
+</div>
+</section><section class="slide level2">
+<h1>パッケージ的には？</h1>
+<div class="column1">
+<div id="htmlwidget-4e093bf2f167d9ef1b25" style="width:400px;height:600px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-4e093bf2f167d9ef1b25">{"x":{"diagram":"\ndigraph data_analytics {\n\n      # graph\n      graph [overlap = true, fontsize = 10]\n\n      # node\n      node [shape=box,\n      fontname = Helvetica,\n      style = filled,\n      fillcolor = SteelBlue,\n      fontcolor = white]\n      前処理;\n\n      node [shape = box,\n      fontname = Helvetica,\n      fillcolor = Gray,\n      fontcolor = black]\n      データ取得; 可視化・モデリング;\n\n      # edge\n      データ取得->前処理\n      前処理->可視化・モデリング\n      }\n      ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="column2">
+<ul>
+<li><strong>stringr</strong>(文字列処理の決定版)</li>
+<li><strong>tidytext</strong>(言語処理関連いろいろ)</li>
+</ul>
+</div>
+</section></section>
+<section><section class="titleslide slide level1"><h1>テキストデータのモデリング</h1></section><section id="r-" class="slide level2">
+<h1>R パッケージ的には？</h1>
+<div class="column1">
+<div id="htmlwidget-6c86b41ac963b57af6fb" style="width:400px;height:600px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-6c86b41ac963b57af6fb">{"x":{"diagram":"\ndigraph data_analytics {\n\n      # graph\n      graph [overlap = true, fontsize = 10]\n\n      # node\n      node [shape=box,\n      fontname = Helvetica,\n      style = filled,\n      fillcolor = SteelBlue,\n      fontcolor = white]\n      可視化・モデリング;\n\n      node [shape = box,\n      fontname = Helvetica,\n      fillcolor = Gray,\n      fontcolor = black]\n      前処理; 可視化・モデリング;\n\n      # edge\n      データ取得->前処理\n      前処理->可視化・モデリング\n      }\n      ","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="column2">
+<ul>
+<li>ネガポジ判定(単語極性辞書との照合)</li>
+<li>各種分類手法
+<ul>
+<li>SVM(<strong>e1071</strong>)</li>
+<li>Random Forest(<strong>RandomForest</strong>, <strong>ranger</strong>)</li>
+<li>XGboost(<strong>xgboost</strong>)</li>
+</ul></li>
+<li>トピックモデル(<strong>LDA</strong>, <strong>topicmodels</strong>, <strong>LDAvis</strong>)</li>
+<li>word2vec(GloVe)(<strong>text2vec</strong>)</li>
+</ul>
+</div>
+</section></section>
+<section><section class="titleslide slide level1"><h1>僕らがまず目指すところ</h1></section><section class="slide level2">
+<h1>単語がスペースで区切られてる状態(分かち書き)</h1>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">id</th>
+<th style="text-align: left;">text</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">私 は 新しい スマートフォン を 買っ た</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">今夜 は ミルクティ を 飲む</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">私 に は 外国人参政権 が ある</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">今夜 は クライアント 対応 で 眠れ ない だろ う</td>
+</tr>
+</tbody>
+</table>
+</section><section id="--" class="slide level2">
+<h1>分かち書きされていれば、<br>たいていのことはできてしまいます。 <br>(ただし日本語は注意が必要)</h1>
+</section><section id="-bag-of-words" class="slide level2">
+<h1>例: Bag of Words</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bow &lt;-<span class="st"> </span>txt %&gt;%
+<span class="st">  </span>tidytext::<span class="kw">unnest_tokens</span>(<span class="dt">output =</span> <span class="st">&quot;word&quot;</span>, <span class="dt">input =</span> <span class="st">&quot;text&quot;</span>,
+                          <span class="dt">token =</span> stringr::str_split, <span class="dt">pattern =</span> <span class="st">&quot; &quot;</span>)
+bow</code></pre></div>
+<pre><code># A tibble: 27 x 2
+      id           word
+   &lt;int&gt;          &lt;chr&gt;
+ 1     1             私
+ 2     1             は
+ 3     1         新しい
+ 4     1 スマートフォン
+ 5     1             を
+ 6     1           買っ
+ 7     1             た
+ 8     2           今夜
+ 9     2             は
+10     2     ミルクティ
+11     2             を
+12     2           飲む
+13     3             私
+14     3             に
+15     3             は
+16     3   外国人参政権
+17     3             が
+18     3           ある
+19     4           今夜
+20     4             は
+21     4   クライアント
+22     4           対応
+23     4             で
+24     4           眠れ
+25     4           ない
+26     4           だろ
+27     4             う</code></pre>
+</section><section id="-bag-of-words-1" class="slide level2">
+<h1>例: Bag of Words</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(magrittr)
+bow %&lt;&gt;%
+<span class="st">  </span><span class="kw">group_by</span>(id, word) %&gt;%
+<span class="st">  </span><span class="kw">summarise</span>(<span class="dt">freq =</span> <span class="kw">n</span>())
+bow</code></pre></div>
+<pre><code># A tibble: 27 x 3
+# Groups:   id [?]
+      id           word  freq
+   &lt;int&gt;          &lt;chr&gt; &lt;int&gt;
+ 1     1 スマートフォン     1
+ 2     1             た     1
+ 3     1             は     1
+ 4     1             を     1
+ 5     1             私     1
+ 6     1         新しい     1
+ 7     1           買っ     1
+ 8     2             は     1
+ 9     2     ミルクティ     1
+10     2             を     1
+11     2           飲む     1
+12     2           今夜     1
+13     3           ある     1
+14     3             が     1
+15     3             に     1
+16     3             は     1
+17     3   外国人参政権     1
+18     3             私     1
+19     4             う     1
+20     4   クライアント     1
+21     4           だろ     1
+22     4             で     1
+23     4           ない     1
+24     4             は     1
+25     4           今夜     1
+26     4           対応     1
+27     4           眠れ     1</code></pre>
+</section><section id="-" class="slide level2">
+<h1>例: ストップワードの除去</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">stopword &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;私&quot;</span>, <span class="st">&quot;こと&quot;</span>)
+bow %&gt;%
+<span class="st">  </span>dplyr::<span class="kw">anti_join</span>(dplyr::<span class="kw">data_frame</span>(<span class="dt">word =</span> stopword), <span class="dt">by =</span> <span class="st">&quot;word&quot;</span>)</code></pre></div>
+<pre><code># A tibble: 25 x 3
+# Groups:   id [?]
+      id           word  freq
+   &lt;int&gt;          &lt;chr&gt; &lt;int&gt;
+ 1     4           眠れ     1
+ 2     4           対応     1
+ 3     4           ない     1
+ 4     4             で     1
+ 5     4           だろ     1
+ 6     4   クライアント     1
+ 7     4             う     1
+ 8     3   外国人参政権     1
+ 9     3             に     1
+10     3             が     1
+11     3           ある     1
+12     2           今夜     1
+13     4           今夜     1
+14     2           飲む     1
+15     2     ミルクティ     1
+16     1           買っ     1
+17     1         新しい     1
+18     1             を     1
+19     2             を     1
+20     1             は     1
+21     2             は     1
+22     3             は     1
+23     4             は     1
+24     1             た     1
+25     1 スマートフォン     1</code></pre>
+</section><section id="-tf-idf" class="slide level2">
+<h1>例: TF-IDF</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">bow %&gt;%
+<span class="st">  </span>tidytext::<span class="kw">bind_tf_idf</span>(<span class="dt">term_col =</span> <span class="st">&quot;word&quot;</span>, <span class="dt">document_col =</span> <span class="st">&quot;id&quot;</span>, <span class="dt">n_col =</span> <span class="st">&quot;freq&quot;</span>)</code></pre></div>
+<pre><code># A tibble: 27 x 6
+# Groups:   id [?]
+      id           word  freq        tf       idf     tf_idf
+   &lt;int&gt;          &lt;chr&gt; &lt;int&gt;     &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt;
+ 1     1 スマートフォン     1 0.1428571 1.3862944 0.19804205
+ 2     1             た     1 0.1428571 1.3862944 0.19804205
+ 3     1             は     1 0.1428571 0.0000000 0.00000000
+ 4     1             を     1 0.1428571 0.6931472 0.09902103
+ 5     1             私     1 0.1428571 0.6931472 0.09902103
+ 6     1         新しい     1 0.1428571 1.3862944 0.19804205
+ 7     1           買っ     1 0.1428571 1.3862944 0.19804205
+ 8     2             は     1 0.2000000 0.0000000 0.00000000
+ 9     2     ミルクティ     1 0.2000000 1.3862944 0.27725887
+10     2             を     1 0.2000000 0.6931472 0.13862944
+11     2           飲む     1 0.2000000 1.3862944 0.27725887
+12     2           今夜     1 0.2000000 0.6931472 0.13862944
+13     3           ある     1 0.1666667 1.3862944 0.23104906
+14     3             が     1 0.1666667 1.3862944 0.23104906
+15     3             に     1 0.1666667 1.3862944 0.23104906
+16     3             は     1 0.1666667 0.0000000 0.00000000
+17     3   外国人参政権     1 0.1666667 1.3862944 0.23104906
+18     3             私     1 0.1666667 0.6931472 0.11552453
+19     4             う     1 0.1111111 1.3862944 0.15403271
+20     4   クライアント     1 0.1111111 1.3862944 0.15403271
+21     4           だろ     1 0.1111111 1.3862944 0.15403271
+22     4             で     1 0.1111111 1.3862944 0.15403271
+23     4           ない     1 0.1111111 1.3862944 0.15403271
+24     4             は     1 0.1111111 0.0000000 0.00000000
+25     4           今夜     1 0.1111111 0.6931472 0.07701635
+26     4           対応     1 0.1111111 1.3862944 0.15403271
+27     4           眠れ     1 0.1111111 1.3862944 0.15403271</code></pre>
+</section><section id="-" class="slide level2">
+<h1>例: 機械学習モデル</h1>
+<p><strong>text2vec</strong>→ txt の状態で入れられる <strong>LDA</strong>→ bow を <code>tidytext::cast_dtm()</code> 関数で変換 その他→ tidyverse とかで頑張る(案件依存なので省略)</p>
+</section></section>
+<section><section class="titleslide slide level1"><h1>形態素解析について</h1></section><section class="slide level2">
+<h1>(日本語の)形態素解析の要素</h1>
+<ul>
+<li>分かち書き</li>
+<li>品詞の付与</li>
+<li>活用語の処理(原形に戻す、表記ゆれの吸収)</li>
+</ul>
+</section><section class="slide level2">
+<h1>形態素解析の仕組み(ざっくり)</h1>
+<ol type="1">
+<li>辞書と照合して候補を列挙</li>
+<li>候補からコストに基づき正しいのを選ぶ</li>
+</ol>
+</section><section class="slide level2">
+<h1>形態素解析の仕組み(図解)</h1>
+<p><img src="slide_img/lattice.png" alt="lattice" /></p>
+<p><a href="http://techlife.cookpad.com/entry/2016/05/11/170000">日本語形態素解析の裏側を覗く！MeCab はどのように形態素解析しているか</a>より</p>
+</section><section class="slide level2">
+<h1>コストの求め方と辞書の性能で形態素解析の精度が決まる</h1>
+</section><section class="slide level2">
+<h1>このへんをいい感じにやってくれるのが形態素解析器</h1>
+</section></section>
+<section><section class="titleslide slide level1"><h1>形態素解析器(有名なもの)</h1></section><section id="mecab" class="slide level2">
+<h1>MeCab</h1>
+<ul>
+<li>条件付き確率場(CRF)に基づく系列ラベリング</li>
+<li>コーパスベースでコストを推定</li>
+<li>辞書への単語追加が容易</li>
+<li>詳しくは
+<ul>
+<li><a href="http://techlife.cookpad.com/entry/2016/05/11/170000">日本語形態素解析の裏側を覗く！MeCab はどのように形態素解析しているか</a></li>
+<li><a href="http://chasen.naist.jp/chaki/t/2009-09-30/doc/mecab-cabocha-nlp-seminar-2009.pdf">日本語解析ツール MeCab, CaboCha の紹介</a></li>
+</ul></li>
+</ul>
+</section><section id="juman" class="slide level2">
+<h1>JUMAN++</h1>
+<ul>
+<li>JUMAN というのがもともとあった</li>
+<li>2016.9 に JUMAN++登場</li>
+<li>人手による連接ルール</li>
+<li>RNN を使用→単語の並びの意味的自然さを考慮可能</li>
+<li>基本語彙のみ人手で整備、あとは Wikipedia や Web テキストから取得</li>
+<li>表記ゆれやくだけた表現をある程度吸収</li>
+<li><strong>Mac か Linux でしか使えない</strong></li>
+<li>詳しくは
+<ul>
+<li><a href="http://aclweb.org/anthology/D/D15/D15-1276.pdf">Morphological Analysis for Unsegmented Languages using Recurrent Neural Network Language Model</a></li>
+</ul></li>
+</ul>
+</section><section id="kytea" class="slide level2">
+<h1>Kytea</h1>
+<ul>
+<li>SVM やロジスティック回帰で単語境界を推定</li>
+<li>文脈でよみがなを変更</li>
+</ul>
+</section></section>
+<section><section id="-r-" class="titleslide slide level1"><h1>形態素解析 (R 編)</h1></section><section class="slide level2">
+<h1>使える形態素解析器</h1>
+<ol type="1">
+<li>MeCab → <strong>RMeCab</strong></li>
+<li>JUMAN++ → <strong>rjumanpp</strong></li>
+</ol>
+</section></section>
+<section><section id="rmecab-" class="titleslide slide level1"><h1>RMeCab パッケージ</h1></section><section class="slide level2">
+<h1>使ってみる</h1>
+<p>MeCab 本体のイントールは省略 インストール</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">install.packages</span>(<span class="st">&quot;RMeCab&quot;</span>, <span class="dt">repos =</span> <span class="st">&quot;http://rmecab.jp/R&quot;</span>)</code></pre></div>
+<p>ロード</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(RMeCab)</code></pre></div>
+</section><section class="slide level2">
+<h1>単純な形態素解析</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(RMeCab)
+rmc &lt;-<span class="st"> </span><span class="kw">RMeCabC</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>)
+rmc</code></pre></div>
+<pre><code>[[1]]
+名詞 
+&quot;私&quot; 
+
+[[2]]
+助詞 
+&quot;は&quot; 
+
+[[3]]
+  形容詞 
+&quot;新しい&quot; 
+
+[[4]]
+            名詞 
+&quot;スマートフォン&quot; 
+
+[[5]]
+助詞 
+&quot;を&quot; 
+
+[[6]]
+  動詞 
+&quot;買っ&quot; 
+
+[[7]]
+助動詞 
+  &quot;た&quot; </code></pre>
+</section><section class="slide level2">
+<h1>余談</h1>
+<p><code>RMeCabC()</code>の出力は、 <br> 「名前のついたリスト」<br>ではなく<br>「名前付きベクトルのリスト」</p>
+</section><section class="slide level2">
+<h1>どういうことか</h1>
+<p>名前のついたリストはこんなやつ</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">( x &lt;-<span class="st"> </span><span class="kw">split</span>(<span class="dv">1</span>:<span class="dv">10</span>, <span class="kw">rep</span>(<span class="kw">c</span>(<span class="st">&quot;odd&quot;</span>, <span class="st">&quot;even&quot;</span>), <span class="dv">5</span>)) )</code></pre></div>
+<pre><code>$even
+[1]  2  4  6  8 10
+
+$odd
+[1] 1 3 5 7 9</code></pre>
+</section><section class="slide level2">
+<h1>リストの状態ではアクセス方法が違う</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">x$even</code></pre></div>
+<pre><code>[1]  2  4  6  8 10</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rmc[[<span class="dv">1</span>]]</code></pre></div>
+<pre><code>名詞 
+&quot;私&quot; </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">rmc[[<span class="dv">1</span>]][[<span class="dv">1</span>]]</code></pre></div>
+<pre><code>[1] &quot;私&quot;</code></pre>
+</section><section id="unlist" class="slide level2">
+<h1>unlist()しちゃえば同じ</h1>
+<p>名前付きベクトルになる</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">unlist</span>(x)</code></pre></div>
+<pre><code>even1 even2 even3 even4 even5  odd1  odd2  odd3  odd4  odd5 
+    2     4     6     8    10     1     3     5     7     9 </code></pre>
+</section><section id="unlist-1" class="slide level2">
+<h1>unlist()しちゃえば同じ</h1>
+<p>名前付きベクトルになる</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">unlist</span>(rmc)</code></pre></div>
+<pre><code>            名詞             助詞           形容詞             名詞 
+            &quot;私&quot;             &quot;は&quot;         &quot;新しい&quot; &quot;スマートフォン&quot; 
+            助詞             動詞           助動詞 
+            &quot;を&quot;           &quot;買っ&quot;             &quot;た&quot; </code></pre>
+</section><section class="slide level2">
+<h1>話を戻して</h1>
+<ul>
+<li>これを分かち書きしたい</li>
+<li>しかし RMeCab には<strong>分かち書きのための関数がない</strong></li>
+<li>こんな感じ？</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">mecab_wakati &lt;-<span class="st"> </span>function(..., <span class="dt">pos =</span> <span class="st">&quot;&quot;</span>) {
+  res &lt;-<span class="st"> </span><span class="kw">RMeCabC</span>(...) %&gt;%
+<span class="st">    </span><span class="kw">unlist</span>() %&gt;%
+<span class="st">    </span>.[stringr::<span class="kw">str_detect</span>(<span class="kw">names</span>(.), pos) ==<span class="st"> </span><span class="ot">TRUE</span>] %&gt;%
+<span class="st">    </span>stringr::<span class="kw">str_c</span>(<span class="dt">collapse =</span> <span class="st">&quot; &quot;</span>)
+
+  if(<span class="kw">length</span>(res) ==<span class="st"> </span><span class="dv">0</span>) {
+    res &lt;-<span class="st"> &quot;&quot;</span>
+  }
+
+  <span class="kw">return</span>(res)
+}</code></pre></div>
+</section><section class="slide level2">
+<h1>できた!!</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">mecab_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は 新しい スマートフォン を 買っ た&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">mecab_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>, <span class="dt">pos =</span> <span class="st">&quot;名詞&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 スマートフォン&quot;</code></pre>
+</section><section class="slide level2">
+<h1>データフレームに適用したい</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">txt2 &lt;-<span class="st"> </span>dplyr::<span class="kw">data_frame</span>(<span class="dt">id =</span> <span class="kw">c</span>(<span class="dv">1</span>:<span class="dv">4</span>),
+                <span class="dt">text =</span> <span class="kw">c</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>,
+                         <span class="st">&quot;今夜はミルクティを飲む&quot;</span>,
+                         <span class="st">&quot;私には外国人参政権がある&quot;</span>,
+                         <span class="st">&quot;今夜はクライアント対応で眠れないだろう&quot;</span>))
+knitr::<span class="kw">kable</span>(txt2)</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">id</th>
+<th style="text-align: left;">text</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">私は新しいスマートフォンを買った</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">今夜はミルクティを飲む</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">私には外国人参政権がある</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">今夜はクライアント対応で眠れないだろう</td>
+</tr>
+</tbody>
+</table>
+</section><section id="rowwise" class="slide level2">
+<h1>rowwise()をかませます</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">txt2 %&gt;%
+<span class="st">  </span><span class="kw">rowwise</span>() %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">wakati =</span> <span class="kw">mecab_wakati</span>(text)) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(-text) %&gt;%
+<span class="st">  </span>knitr::<span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">id</th>
+<th style="text-align: left;">wakati</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">私 は 新しい スマートフォン を 買っ た</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">今夜 は ミルクティ を 飲む</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">私 に は 外国 人参 政権 が ある</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">今夜 は クライアント 対応 で 眠れ ない だろ う</td>
+</tr>
+</tbody>
+</table>
+</section><section id="hogehoge" class="slide level2">
+<h1>RMeCab は他にもいろいろできる</h1>
+<p><img src="slide_img/rmecab.png" alt="rmecab" /></p>
+<p><a href="http://rmecab.jp/wiki/index.php?RMeCabFunctions">RMeCab 機能</a></p>
+</section></section>
+<section><section id="rjumanpp-" class="titleslide slide level1"><h1>rjumanpp パッケージ</h1></section><section class="slide level2">
+<h1>作者は私です</h1>
+<ul>
+<li>まだ分かち書きの関数しかありません</li>
+<li>頑張ります</li>
+<li>特徴
+<ul>
+<li><strong>tidyverse</strong>群を使ったイマドキで見通しのいいコード</li>
+<li>関数には共通のプレフィックス(<code>jum_***</code>)</li>
+<li><strong>pkgdown</strong> を使った見やすいドキュメント</li>
+</ul></li>
+<li>詳しくは<a href="https://ymattu.github.io/rjumanpp/articles/rjumanpp.html">vignette</a></li>
+</ul>
+</section><section id="tsukattemiru" class="slide level2">
+<h1>使ってみる</h1>
+<p>インストール</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 方法 1</span>
+githubinstall::<span class="kw">githubinstall</span>(<span class="st">&quot;rjumanpp&quot;</span>)
+
+<span class="co"># 方法 2</span>
+devtools::<span class="kw">install_github</span>(<span class="st">&quot;ymattu/rjumanpp&quot;</span>)</code></pre></div>
+<p>ロード</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(rjumanpp)</code></pre></div>
+</section><section class="slide level2">
+<h1>分かち書きの関数、あります</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は 新しい スマートフォン を 買った&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>, <span class="dt">pos =</span> <span class="st">&quot;名詞&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 スマートフォン&quot;</code></pre>
+</section><section id="mecab_wakati" class="slide level2">
+<h1><code>mecab_wakati</code>と比較</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は 新しい スマートフォン を 買った&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">mecab_wakati</span>(<span class="st">&quot;私は新しいスマートフォンを買った&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は 新しい スマートフォン を 買っ た&quot;</code></pre>
+</section><section id="jumanpp" class="slide level2">
+<h1>JUMAN++独自の機能</h1>
+<p>表記ゆれの置き換え(JUMAN++が拾えてたら)</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_wakati</span>(<span class="st">&quot;私はけんさくえんじんぐーぐるを使う&quot;</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は けんさく えんじん ぐーぐる を 使う&quot;</code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_wakati</span>(<span class="st">&quot;私はけんさくえんじんぐーぐるを使う&quot;</span>, <span class="dt">redirect =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<pre><code>[1] &quot;私 は けんさく えんじん Ｇｏｏｇｌｅ を 使う&quot;</code></pre>
+</section><section class="slide level2">
+<h1>データフレーム</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">txt2 %&gt;%
+<span class="st">  </span><span class="kw">rowwise</span>() %&gt;%
+<span class="st">  </span><span class="kw">mutate</span>(<span class="dt">wakati =</span> <span class="kw">jum_wakati</span>(text)) %&gt;%
+<span class="st">  </span><span class="kw">select</span>(-text) %&gt;%
+<span class="st">  </span>knitr::<span class="kw">kable</span>()</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: right;">id</th>
+<th style="text-align: left;">wakati</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">私 は 新しい スマートフォン を 買った</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">2</td>
+<td style="text-align: left;">今夜 は ミルクティ を 飲む</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">3</td>
+<td style="text-align: left;">私 に は 外国 人 参政 権 が ある</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">4</td>
+<td style="text-align: left;">今夜 は クライアント 対応 で 眠れ ない だろう</td>
+</tr>
+</tbody>
+</table>
+</section><section class="slide level2">
+<h1>欠点</h1>
+<p>遅いです。</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">system.time</span>(<span class="kw">jum_wakati</span>(<span class="st">&quot;新しいスマートフォンを買った&quot;</span>))</code></pre></div>
+<pre><code>   user  system elapsed 
+  0.127   0.240   0.389 </code></pre>
+<p>これは JUMAN++が遅いため(RNN の影響)</p>
+</section><section class="slide level2">
+<h1>サーバーモード</h1>
+<ul>
+<li>JUMAN++ を常に起動 <br> →オーバーヘッドを回避 <br>→ちょっと速くなる</li>
+</ul>
+<p>ターミナルで</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">ruby</span> script/server.rb --cmd <span class="st">&quot;jumanpp --force-single-path&quot;</span></code></pre></div>
+<p>解析もターミナルで</p>
+<div class="sourceCode"><pre class="sourceCode bash"><code class="sourceCode bash"><span class="kw">echo</span> <span class="st">&quot;ケーキを食べる&quot;</span> <span class="kw">|</span> <span class="kw">ruby</span> script/client.rb</code></pre></div>
+</section><section class="slide level2">
+<h1>ってやるのは面倒くさいですよね？</h1>
+</section><section class="slide level2">
+<h1>関数を用意しました</h1>
+<p>サーバーを起動(ローカルホスト, 12000 ポート)</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_start_server</span>()</code></pre></div>
+<p>ポートとかホスト名を指定したいときは</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_start_server</span>(<span class="dt">host.name =</span> <span class="st">&quot;hoge&quot;</span>, <span class="dt">port =</span> <span class="dv">1234</span>)</code></pre></div>
+</section><section class="slide level2">
+<h1>ちょっと速くなる</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># 関数内で server=TRUE を指定</span>
+<span class="kw">jum_wakati</span>(<span class="st">&quot;新しいスマートフォンを買った&quot;</span>, <span class="dt">server =</span> <span class="ot">TRUE</span>)</code></pre></div>
+<pre><code>[1] &quot;新しい スマートフォン を 買った&quot;</code></pre>
+</section><section class="slide level2">
+<h1>時間を比較</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># サーバーを利用しない</span>
+<span class="kw">system.time</span>(<span class="kw">jum_wakati</span>(<span class="st">&quot;新しいスマートフォンを買った&quot;</span>, <span class="dt">server =</span> <span class="ot">FALSE</span>))</code></pre></div>
+<pre><code>   user  system elapsed 
+  0.123   0.249   0.384 </code></pre>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># サーバーを利用する</span>
+<span class="kw">system.time</span>(<span class="kw">jum_wakati</span>(<span class="st">&quot;新しいスマートフォンを買った&quot;</span>, <span class="dt">server =</span> <span class="ot">TRUE</span>))</code></pre></div>
+<pre><code>   user  system elapsed 
+  0.086   0.078   0.208 </code></pre>
+</section><section class="slide level2">
+<h1>サーバーは解析が終わったら閉じる</h1>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">jum_close_server</span>()</code></pre></div>
+</section></section>
+<section><section class="titleslide slide level1"><h1>まとめ</h1></section><section class="slide level2">
+<h1>パッケージの使い分け</h1>
+<ul>
+<li>スピード重視なら<strong>RMeCab</strong></li>
+<li>正確さ重視なら<strong>rjumanpp</strong></li>
+<li>どっちがいいとかはない</li>
+<li>形態素解析以前の前処理もしっかりと!</li>
+</ul>
+</section><section class="slide level2">
+<h1>このスライドについて</h1>
+<p><strong>revealjs</strong> パッケージで作成 - 以下の GitHub でソースコードを公開 <br> <a href="https://github.com/ymattu/TokyoR64" class="uri">https://github.com/ymattu/TokyoR64</a></p>
+</section><section id="enjoy" class="slide level2">
+<h1>Enjoy !!</h1>
+</section></section>
+    </div>
+  </div>
+
+  <script src="apply_files/reveal.js-3.3.0.1/lib/js/head.min.js"></script>
+  <script src="apply_files/reveal.js-3.3.0.1/js/reveal.js"></script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://github.com/hakimel/reveal.js#configuration
+      Reveal.initialize({
+        // Display the page number of the current slide
+        slideNumber: true,
+        // Push each slide change to the browser history
+        history: true,
+        // Vertical centering of slides
+        center: true,
+        // Transition style
+        transition: 'convex', // none/fade/slide/convex/concave/zoom
+        // Transition style for full page slide backgrounds
+        backgroundTransition: 'default', // none/fade/slide/convex/concave/zoom
+
+
+
+        chalkboard: {
+          theme: 'whiteboard',
+        },
+
+        keyboard: {
+          67: function() { RevealChalkboard.toggleNotesCanvas() },    // toggle notes canvas when 'c' is pressed
+          66: function() { RevealChalkboard.toggleChalkboard() }, // toggle chalkboard when 'b' is pressed
+          46: function() { RevealChalkboard.clear() },    // clear chalkboard when 'DEL' is pressed
+           8: function() { RevealChalkboard.reset() },    // reset chalkboard data on current slide when 'BACKSPACE' is pressed
+          68: function() { RevealChalkboard.download() }, // downlad recorded chalkboard drawing when 'd' is pressed
+        },
+
+        // Optional reveal.js plugins
+        dependencies: [
+          { src: 'apply_files/reveal.js-3.3.0.1/plugin/chalkboard/chalkboard.js', async: true },
+        ]
+      });
+    </script>
+  <!-- dynamically load mathjax for compatibility with self-contained -->
+  <script>
+    (function () {
+      var script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+      document.getElementsByTagName("head")[0].appendChild(script);
+    })();
+  </script>
+
+<script>
+  (function() {
+    if (window.jQuery) {
+      Reveal.addEventListener( 'slidechanged', function(event) {  
+        window.jQuery(event.previousSlide).trigger('hidden');
+        window.jQuery(event.currentSlide).trigger('shown');
+      });
+    }
+  })();
+</script>
+
+
+  </body>
+</html>

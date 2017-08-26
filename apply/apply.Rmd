@@ -1,0 +1,535 @@
+---
+title: "R による日本語テキスト前処理 <br> (形態素解析を中心に)"
+author: "@y__mattu"
+date: "Tokyo.R #64 応用セッション"
+output:
+  revealjs::revealjs_presentation:
+    transition: convex
+    css: for_revealjs.css
+    theme: sky
+    highlight: kate
+    center: true
+    self_contained: false
+    reveal_plugins: ["chalkboard"]
+    reveal_options:
+      slideNumber: true
+      chalkboard:
+        theme: whiteboard
+pandoc_args: [
+  '--from', 'markdown+autolink_bare_uris+tex_math_single_backslash-implicit_figures'
+]
+---
+
+```{r eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE, comment=""}
+knitr::opts_chunk$set(echo = TRUE,
+                      eval = TRUE,
+                      warning = FALSE,
+                      message = FALSE,
+                      comment = "",
+                      fig.height = 10,
+                      fig.width = 10,
+                      out.height = 600,
+                      out.width = 400)
+options(dplyr.print_max = 1e9)
+```
+
+
+# はじめに
+
+## 誰？
+
+<div class="column1">
+- 松村優哉
+- <u>Twitter</u>: **y\_\_mattu**
+- <u>GitHub</u>: **ymattu**
+- M1
+- 計量経済学、ベイズ統計、因果推論、マーケティング
+- 言語: R, SAS, Python
+- https://ymattu.github.io/
+- http://y-mattu.hatenablog.com/
+- Tokyo.R 運営チーム
+</div>
+
+<div class="column2">
+![icon](./slide_img/twitter_icon.jpg)
+</div>
+
+## 著書(共著)
+![book](./slide_img/datasci.jpg)
+
+## 今日の話
+- テキストマイニングの全体像
+    - テキストデータ特有の前処理
+- 僕らがまず目指すべきところ
+- 形態素解析について
+- R で形態素解析
+- まとめ
+
+
+
+## パッケージ名だけでも覚えて<br>帰ってくださいね
+
+# テキストマイニングの全体像
+## テキストデータの解析([引用](https://ymattu.github.io/TokyoR61/for_beginners.html#3))
+```{r echo=FALSE}
+library(DiagrammeR)
+
+grViz("
+digraph data_analytics {
+
+      # graph
+      graph [overlap = true, fontsize = 20]
+
+      # node
+      node [shape = box,
+      fontname = Helvetica,
+      fillcolor = white,
+      fontcolor = black]
+      データ取得; 前処理; 可視化・モデリング;
+
+      # edge
+      データ取得->前処理
+      前処理->可視化・モデリング
+      }
+      ")
+```
+
+## テキストデータ特有の処理
+<div class="column1">
+```{r echo=FALSE}
+grViz("
+digraph data_analytics {
+
+      # graph
+      graph [overlap = true, fontsize = 10]
+
+      # node
+      node [shape=box,
+      fontname = Helvetica,
+      style = filled,
+      fillcolor = SteelBlue,
+      fontcolor = white]
+      前処理;
+
+      node [shape = box,
+      fontname = Helvetica,
+      fillcolor = Gray,
+      fontcolor = black]
+      データ取得; 可視化・モデリング;
+
+      # edge
+      データ取得->前処理
+      前処理->可視化・モデリング
+      }
+      ")
+```
+</div>
+
+<div class="column2">
+- 本文抽出(Web データ、非構造化データ)
+- 形態素解析、統語解析、意味解析 <br> →文書の特徴を抽出
+- 数値表現化(Bag of Words, N-gram, TF-IDF など))
+</div>
+
+
+## パッケージ的には？
+<div class="column1">
+```{r echo=FALSE}
+grViz("
+digraph data_analytics {
+
+      # graph
+      graph [overlap = true, fontsize = 10]
+
+      # node
+      node [shape=box,
+      fontname = Helvetica,
+      style = filled,
+      fillcolor = SteelBlue,
+      fontcolor = white]
+      前処理;
+
+      node [shape = box,
+      fontname = Helvetica,
+      fillcolor = Gray,
+      fontcolor = black]
+      データ取得; 可視化・モデリング;
+
+      # edge
+      データ取得->前処理
+      前処理->可視化・モデリング
+      }
+      ")
+```
+</div>
+
+<div class="column2">
+- **stringr**(文字列処理の決定版)
+- **tidytext**(言語処理関連いろいろ)
+</div>
+
+# テキストデータのモデリング
+## R パッケージ的には？
+<div class="column1">
+```{r echo=FALSE}
+grViz("
+digraph data_analytics {
+
+      # graph
+      graph [overlap = true, fontsize = 10]
+
+      # node
+      node [shape=box,
+      fontname = Helvetica,
+      style = filled,
+      fillcolor = SteelBlue,
+      fontcolor = white]
+      可視化・モデリング;
+
+      node [shape = box,
+      fontname = Helvetica,
+      fillcolor = Gray,
+      fontcolor = black]
+      前処理; 可視化・モデリング;
+
+      # edge
+      データ取得->前処理
+      前処理->可視化・モデリング
+      }
+      ")
+```
+</div>
+
+<div class="column2">
+- ネガポジ判定(単語極性辞書との照合)
+- 各種分類手法
+    - SVM(**e1071**)
+    - Random Forest(**RandomForest**, **ranger**)
+    - XGboost(**xgboost**)
+- トピックモデル(**LDA**, **topicmodels**, **LDAvis**)
+- word2vec(GloVe)(**text2vec**)
+</div>
+
+# 僕らがまず目指すところ
+
+## 単語がスペースで区切られてる状態(分かち書き)
+```{r echo=FALSE}
+library(tidyverse)
+txt <- dplyr::data_frame(id = c(1:4),
+                text = c("私 は 新しい スマートフォン を 買っ た",
+                         "今夜 は ミルクティ を 飲む",
+                         "私 に は 外国人参政権 が ある",
+                         "今夜 は クライアント 対応 で 眠れ ない だろ う"))
+knitr::kable(txt)
+```
+
+## 分かち書きされていれば、<br>たいていのことはできてしまいます。 <br>(ただし日本語は注意が必要)
+
+
+## 例: Bag of Words
+```{r}
+bow <- txt %>%
+  tidytext::unnest_tokens(output = "word", input = "text",
+                          token = stringr::str_split, pattern = " ")
+bow
+```
+
+## 例: Bag of Words
+```{r}
+library(magrittr)
+bow %<>%
+  group_by(id, word) %>%
+  summarise(freq = n())
+bow
+```
+
+## 例: ストップワードの除去
+```{r}
+stopword <- c("私", "こと")
+bow %>%
+  dplyr::anti_join(dplyr::data_frame(word = stopword), by = "word")
+```
+
+
+## 例: TF-IDF
+```{r}
+bow %>%
+  tidytext::bind_tf_idf(term_col = "word", document_col = "id", n_col = "freq")
+```
+
+## 例: 機械学習モデル
+**text2vec**→ txt の状態で入れられる
+**LDA**→ bow を `tidytext::cast_dtm()` 関数で変換
+その他→ tidyverse とかで頑張る(案件依存なので省略)
+
+# 形態素解析について
+
+## (日本語の)形態素解析の要素
+
+- 分かち書き
+- 品詞の付与
+- 活用語の処理(原形に戻す、表記ゆれの吸収)
+
+## 形態素解析の仕組み(ざっくり)
+1. 辞書と照合して候補を列挙
+2. 候補からコストに基づき正しいのを選ぶ
+
+## 形態素解析の仕組み(図解)
+![lattice](./slide_img/lattice.png)
+
+[日本語形態素解析の裏側を覗く！MeCab はどのように形態素解析しているか](http://techlife.cookpad.com/entry/2016/05/11/170000)より
+
+## コストの求め方と辞書の性能で形態素解析の精度が決まる
+
+## このへんをいい感じにやってくれるのが形態素解析器
+
+# 形態素解析器(有名なもの)
+## MeCab
+- 条件付き確率場(CRF)に基づく系列ラベリング
+- コーパスベースでコストを推定
+- 辞書への単語追加が容易
+- 詳しくは
+    - [日本語形態素解析の裏側を覗く！MeCab はどのように形態素解析しているか](http://techlife.cookpad.com/entry/2016/05/11/170000)
+    - [日本語解析ツール MeCab, CaboCha の紹介](http://chasen.naist.jp/chaki/t/2009-09-30/doc/mecab-cabocha-nlp-seminar-2009.pdf)
+
+## JUMAN++
+- JUMAN というのがもともとあった
+- 2016.9 に JUMAN++登場
+- 人手による連接ルール
+- RNN を使用→単語の並びの意味的自然さを考慮可能
+- 基本語彙のみ人手で整備、あとは Wikipedia や Web テキストから取得
+- 表記ゆれやくだけた表現をある程度吸収
+- **Mac か Linux でしか使えない**
+- 詳しくは
+    - [Morphological Analysis for Unsegmented Languages using Recurrent Neural Network Language Model](http://aclweb.org/anthology/D/D15/D15-1276.pdf)
+
+## Kytea
+- SVM やロジスティック回帰で単語境界を推定
+- 文脈でよみがなを変更
+
+# 形態素解析 (R 編)
+
+## 使える形態素解析器
+1. MeCab → **RMeCab**
+2. JUMAN++ → **rjumanpp**
+
+# RMeCab パッケージ
+## 使ってみる
+MeCab 本体のイントールは省略
+インストール
+```{r eval=FALSE}
+install.packages("RMeCab", repos = "http://rmecab.jp/R")
+```
+
+ロード
+```{r }
+library(RMeCab)
+```
+
+## 単純な形態素解析
+```{r }
+library(RMeCab)
+rmc <- RMeCabC("私は新しいスマートフォンを買った")
+rmc
+```
+
+## 余談
+`RMeCabC()`の出力は、 <br> 「名前のついたリスト」<br>ではなく<br>「名前付きベクトルのリスト」
+
+## どういうことか
+名前のついたリストはこんなやつ
+```{r }
+( x <- split(1:10, rep(c("odd", "even"), 5)) )
+```
+
+## リストの状態ではアクセス方法が違う
+```{r }
+x$even
+
+rmc[[1]]
+rmc[[1]][[1]]
+```
+
+## unlist()しちゃえば同じ
+名前付きベクトルになる
+```{r }
+unlist(x)
+```
+
+## unlist()しちゃえば同じ
+名前付きベクトルになる
+```{r}
+unlist(rmc)
+```
+
+## 話を戻して
+- これを分かち書きしたい
+- しかし RMeCab には**分かち書きのための関数がない**
+- こんな感じ？
+```{r }
+mecab_wakati <- function(..., pos = "") {
+  res <- RMeCabC(...) %>%
+    unlist() %>%
+    .[stringr::str_detect(names(.), pos) == TRUE] %>%
+    stringr::str_c(collapse = " ")
+
+  if(length(res) == 0) {
+    res <- ""
+  }
+
+  return(res)
+}
+```
+
+## できた!!
+```{r }
+mecab_wakati("私は新しいスマートフォンを買った")
+mecab_wakati("私は新しいスマートフォンを買った", pos = "名詞")
+```
+
+## データフレームに適用したい
+```{r }
+txt2 <- dplyr::data_frame(id = c(1:4),
+                text = c("私は新しいスマートフォンを買った",
+                         "今夜はミルクティを飲む",
+                         "私には外国人参政権がある",
+                         "今夜はクライアント対応で眠れないだろう"))
+knitr::kable(txt2)
+```
+
+## rowwise()をかませます
+```{r }
+txt2 %>%
+  rowwise() %>%
+  mutate(wakati = mecab_wakati(text)) %>%
+  select(-text) %>%
+  knitr::kable()
+```
+
+## RMeCab は他にもいろいろできる {#hogehoge}
+![rmecab](./slide_img/rmecab.png)
+
+[RMeCab 機能](http://rmecab.jp/wiki/index.php?RMeCabFunctions)
+
+
+# rjumanpp パッケージ
+
+## 作者は私です
+- まだ分かち書きの関数しかありません
+- 頑張ります
+- 特徴
+    - **tidyverse**群を使ったイマドキで見通しのいいコード
+    - 関数には共通のプレフィックス(`jum_***`)
+    - **pkgdown** を使った見やすいドキュメント
+- 詳しくは[vignette](https://ymattu.github.io/rjumanpp/articles/rjumanpp.html)
+
+## 使ってみる {#tsukattemiru}
+
+インストール
+```{r eval=FALSE}
+# 方法 1
+githubinstall::githubinstall("rjumanpp")
+
+# 方法 2
+devtools::install_github("ymattu/rjumanpp")
+```
+
+ロード
+```{r }
+library(rjumanpp)
+```
+
+## 分かち書きの関数、あります
+```{r }
+jum_wakati("私は新しいスマートフォンを買った")
+jum_wakati("私は新しいスマートフォンを買った", pos = "名詞")
+```
+
+## `mecab_wakati`と比較
+```{r }
+jum_wakati("私は新しいスマートフォンを買った")
+mecab_wakati("私は新しいスマートフォンを買った")
+```
+
+## JUMAN++独自の機能 {#jumanpp}
+表記ゆれの置き換え(JUMAN++が拾えてたら)
+```{r }
+jum_wakati("私はけんさくえんじんぐーぐるを使う")
+jum_wakati("私はけんさくえんじんぐーぐるを使う", redirect = TRUE)
+```
+
+## データフレーム
+```{r }
+txt2 %>%
+  rowwise() %>%
+  mutate(wakati = jum_wakati(text)) %>%
+  select(-text) %>%
+  knitr::kable()
+```
+
+## 欠点
+遅いです。
+```{r }
+system.time(jum_wakati("新しいスマートフォンを買った"))
+```
+
+これは JUMAN++が遅いため(RNN の影響)
+
+## サーバーモード
+- JUMAN++ を常に起動 <br> →オーバーヘッドを回避 <br>→ちょっと速くなる
+
+ターミナルで
+```{r, engine = 'bash', eval = FALSE}
+ruby script/server.rb --cmd "jumanpp --force-single-path"
+```
+
+解析もターミナルで
+```{r, engine = 'bash', eval = FALSE}
+echo "ケーキを食べる" | ruby script/client.rb
+```
+
+## ってやるのは面倒くさいですよね？
+
+## 関数を用意しました
+サーバーを起動(ローカルホスト, 12000 ポート)
+```{r }
+jum_start_server()
+```
+
+ポートとかホスト名を指定したいときは
+```{r eval=FALSE}
+jum_start_server(host.name = "hoge", port = 1234)
+```
+
+## ちょっと速くなる
+```{r }
+# 関数内で server=TRUE を指定
+jum_wakati("新しいスマートフォンを買った", server = TRUE)
+```
+
+## 時間を比較
+```{r }
+# サーバーを利用しない
+system.time(jum_wakati("新しいスマートフォンを買った", server = FALSE))
+# サーバーを利用する
+system.time(jum_wakati("新しいスマートフォンを買った", server = TRUE))
+```
+
+## サーバーは解析が終わったら閉じる
+```{r }
+jum_close_server()
+```
+
+# まとめ
+## パッケージの使い分け
+- スピード重視なら**RMeCab**
+- 正確さ重視なら**rjumanpp**
+- どっちがいいとかはない
+- 形態素解析以前の前処理もしっかりと!
+
+## このスライドについて
+**revealjs** パッケージで作成
+- 以下の GitHub でソースコードを公開 <br>
+https://github.com/ymattu/TokyoR64
+
+## Enjoy !!
