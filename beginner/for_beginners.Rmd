@@ -1,7 +1,7 @@
 ---
 title: "データフレームの扱い方 <br> 初級編"
 author: "@y__mattu"
-date: "2017/5/20 Tokyo.R #61"
+date: "Tokyo.R #64 応用セッション"
 output:
   xaringan::moon_reader:
     css: "for_xaringan.css"
